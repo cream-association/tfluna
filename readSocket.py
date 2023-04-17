@@ -13,6 +13,7 @@ while True :
     print("waiting message...")
     message, carteAdresse = socketPc.recvfrom(2048)
     print("Message: %s"%message.decode("utf-8"))
+    print("From "+str(carteAdresse))
 print("end")
 
 socketPc.close()

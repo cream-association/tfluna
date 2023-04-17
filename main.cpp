@@ -29,10 +29,11 @@ void wait(float s){
 }
 
 /*Attribution d'une adresse ip pour la carte, le mask du réseau, et la passerelle*/
-const char* ipAdresse = "169.254.23.213";
+const char* ipAdresse = "169.254.23.212";
 const char* ipMask = "255.255.0.0";
-const char* ipGetway = "192.168.43.1";
-const char* myAddress = "169.254.23.212";
+const char* ipGetway = "192.168.43.11";
+const char* raspIP = "169.254.192.91";
+const int port = 8080;
 
 /*La classe Ethernet*/
 EthernetInterface eth;
@@ -48,59 +49,48 @@ void testMotor(){
     pwmDroite.pulsewidth_us(0);
     pwmGauche.pulsewidth_us(0);
     wait(.05);
-
-}
-
-
-void setupEth(){
-  /*Initialiser la connection */
-  eth.set_network(ipAdresse, ipMask, ipGetway);
-  eth.connect(); //Crée la connection
 }
 
 int main(void){
+    pwmDroite.period_us(1000);
+    pwmGauche.period_us(1000);
     // testMotor();
-
-    wait(1);
-    setupEth();
+    /*Initialiser la connection */
+    eth.set_network(ipAdresse, ipMask, ipGetway);
+    eth.connect(); //Crée la connection
 
     SocketAddress monAdresse;  //La socket de la carte Nucleo
 
     eth.get_ip_address(&monAdresse); //Attribuer la socket à la connection ethernet
 
-    SocketAddress pcAdresse; //La socket du pc
-    eth.gethostbyname(myAddress, &pcAdresse);
+    SocketAddress raspAdress; //La socket du pc
+    eth.gethostbyname(raspIP, &raspAdress);
+    raspAdress.set_port(port); //Le port de connection.
 
     eth.ethInterface();
 
     UDPSocket sock; //Une socket UDP pour le transport (couche transport) .
     sock.open(&eth); //Associer la socket UDP a la connection eth.
 
-    pcAdresse.set_port(8080); //Le port de connection.
-
     char out_buffer[] = "ready"; ///Le message a envoyer au pc
     char in_data[1];
-
-    sock.sendto(pcAdresse, out_buffer, sizeof(out_buffer));
-    wait(0.1);
+    sock.sendto(raspAdress, out_buffer, sizeof(out_buffer));
+    return 0;
     while (1){
-      sock.recvfrom(&pcAdresse, &in_data, sizeof(in_data));
-      char message[] = "receive";
-      sock.sendto(pcAdresse, message, sizeof(message));
-      wait(0.1);
-      sock.sendto(pcAdresse, in_data, sizeof(in_data));
-      wait(0.1);
-      if(in_data[0]=='a'){
+      sock.recvfrom(&raspAdress, &in_data, sizeof(in_data));
 
+      sock.sendto(raspAdress, in_data, sizeof(in_data));
+
+      if(in_data[0]=='a'){
         pwmDroite.pulsewidth_us(0);
         pwmGauche.pulsewidth_us(800);
       }
       if(in_data[0]=='z'){
         pwmDroite.pulsewidth_us(800);
-        pwmGauche.pulsewidth_us(0);
+        pwmGauche.pulsewidth_us(800);
       }
       if(in_data[0]=='e'){
-        pwmDroite.pulsewidth_us(0);
+        pwmDroite.pulsewidth_us(800);
         pwmGauche.pulsewidth_us(0);
       }
       if(in_data[0]=='s'){
