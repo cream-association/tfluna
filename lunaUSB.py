@@ -34,17 +34,22 @@ def read_tfluna_data(ser):
 
 def switchInReadMode(ser):
     ser.write(bytes([0x5A, 0x05, 0x02, 0x00, 0x00, 0x00, 0x07, 0xAB]))
-    
+
+def switchInIDLEMode(ser):
+    ser.write(bytes([0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x41]))
+
 while True :
     try :
         sers = getSers()
         print("set in read mode")
+        ids = []
         for ser in sers:
+            id = getId(ser)
+            ids += [id]
             switchInReadMode(ser)
         while (True):
             for ser in sers:
                 distance, strength = read_tfluna_data(ser)
-                id = getId(ser)
                 print(ser.port+" ("+str(id)+") "+": "+str(distance))
             time.sleep(.2)
 
